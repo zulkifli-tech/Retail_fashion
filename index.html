@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Butik Lestari — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:#F7F5F2; --surface:#FFFFFF; --surface2:#F0EDE8; --border:#E8E3DC;
+  --text:#1A1714; --text2:#6B6460; --text3:#A09A95;
+  --accent:#C4965A; --accent2:#8B5E3C;
+  --green:#3D7A5E; --red:#C45A5A; --blue:#4A6FA5; --purple:#7A5A9E;
+  --shadow:0 1px 3px rgba(0,0,0,0.06),0 4px 16px rgba(0,0,0,0.04);
+  --r:14px; --rs:10px; --sw:220px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+/* SIDEBAR */
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:var(--sw);background:var(--text);display:flex;flex-direction:column;z-index:200;padding:28px 0;transition:transform .3s cubic-bezier(.4,0,.2,1)}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:190}
+.logo{padding:0 24px 24px;border-bottom:1px solid rgba(255,255,255,.08)}
+.logo-title{font-family:'Playfair Display',serif;font-size:20px;color:#fff}
+.logo-sub{font-size:10px;color:rgba(255,255,255,.32);letter-spacing:1.5px;text-transform:uppercase;margin-top:3px}
+.nav{padding:16px 0;flex:1}
+.nav-lbl{font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:rgba(255,255,255,.28);padding:0 24px;margin:14px 0 6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:11px 24px;cursor:pointer;color:rgba(255,255,255,.48);font-size:13.5px;border-left:2px solid transparent;transition:all .18s}
+.nav-item:hover{color:rgba(255,255,255,.85);background:rgba(255,255,255,.05)}
+.nav-item.active{color:#fff;border-left-color:var(--accent);background:rgba(196,150,90,.1)}
+.nav-icon{width:16px;height:16px;flex-shrink:0}
+.nav-badge{margin-left:auto;background:var(--accent);color:#fff;font-size:10px;padding:2px 7px;border-radius:20px;font-weight:700}
+.sf{padding:18px 20px;border-top:1px solid rgba(255,255,255,.08)}
+.bsel{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px 28px 8px 12px;color:rgba(255,255,255,.7);font-size:12px;width:100%;font-family:'DM Sans',sans-serif;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(255,255,255,.4)'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+
+/* MAIN */
+.main{margin-left:var(--sw);min-height:100vh}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;gap:10px}
+.topbar-l{display:flex;align-items:center;gap:10px}
+.ham{display:none;background:none;border:none;cursor:pointer;padding:4px;color:var(--text)}
+.ptitle{font-family:'Playfair Display',serif;font-size:18px;font-weight:600;white-space:nowrap}
+.topbar-r{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.dbadge{background:var(--surface2);border:1px solid var(--border);padding:5px 12px;border-radius:8px;font-size:12px;color:var(--text2);white-space:nowrap}
+.ptabs{display:flex;background:var(--surface2);border-radius:8px;padding:3px;gap:2px}
+.ptab{padding:5px 12px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;color:var(--text2);border:none;background:none;font-family:'DM Sans',sans-serif;transition:all .2s;white-space:nowrap}
+.ptab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+
+/* CONTENT */
+.content{padding:20px 24px;display:none}
+.content.active{display:block}
+.stitle{font-family:'Playfair Display',serif;font-size:14px;font-weight:600;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.stitle::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* KPI */
+.kgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px}
+.kcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:all .2s}
+.kcard::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;opacity:0}
+.kcard.ac::before{opacity:1;background:var(--accent)}
+.kcard.gr::before{opacity:1;background:var(--green)}
+.kcard.bl::before{opacity:1;background:var(--blue)}
+.kcard.pu::before{opacity:1;background:var(--purple)}
+.klbl{font-size:10.5px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:500;margin-bottom:7px}
+.kval{font-size:22px;font-weight:700;color:var(--text);line-height:1;margin-bottom:7px}
+.kval span{font-size:13px;font-weight:400;color:var(--text3)}
+.kchg{display:flex;align-items:center;gap:4px;font-size:11.5px;font-weight:500}
+.kchg.up{color:var(--green)} .kchg.dn{color:var(--red)}
+.kico{position:absolute;right:14px;top:14px;width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.kico.ac{background:rgba(196,150,90,.1)} .kico.gr{background:rgba(61,122,94,.1)}
+.kico.bl{background:rgba(74,111,165,.1)} .kico.pu{background:rgba(122,90,158,.1)}
+
+/* GRIDS */
+.cgrid{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:22px}
+.cgrid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;box-shadow:var(--shadow)}
+.ch{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;gap:8px}
+.ct{font-size:13px;font-weight:600;color:var(--text)}
+.cs{font-size:11px;color:var(--text3);margin-top:2px}
+.badge{font-size:10.5px;padding:3px 9px;border-radius:20px;font-weight:600;white-space:nowrap;flex-shrink:0}
+.bg{background:rgba(61,122,94,.1);color:var(--green)}
+.ba{background:rgba(196,150,90,.1);color:var(--accent2)}
+.bb{background:rgba(74,111,165,.1);color:var(--blue)}
+canvas{max-height:220px;width:100%!important}
+
+/* PROGRESS */
+.trow{display:flex;align-items:center;gap:10px;margin-bottom:13px}
+.tlbl{font-size:12px;font-weight:600;color:var(--text2);width:80px;flex-shrink:0}
+.pbar{flex:1;height:7px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.pfill{height:100%;border-radius:4px}
+.tpct{font-size:12px;font-weight:700;color:var(--text);width:36px;text-align:right}
+
+/* PRODUCTS */
+.plist{display:flex;flex-direction:column;gap:8px}
+.pitem{display:flex;align-items:center;gap:10px;padding:9px 10px;background:var(--surface2);border-radius:var(--rs);transition:background .2s}
+.pitem:hover{background:var(--border)}
+.prk{width:22px;height:22px;border-radius:6px;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.prk.r2{background:var(--text2)} .prk.r3{background:var(--text3)}
+.prk.r4,.prk.r5{background:var(--border);color:var(--text2)}
+.pname{font-size:12.5px;font-weight:500} .pcat{font-size:11px;color:var(--text3)}
+.psales{font-size:12.5px;font-weight:700} .pqty{font-size:11px;color:var(--text3);text-align:right}
+
+/* CUSTOMER */
+.csgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.sbox{background:var(--surface2);border-radius:var(--rs);padding:12px;text-align:center}
+.sbval{font-size:20px;font-weight:700} .sblbl{font-size:11px;color:var(--text3);margin-top:2px}
+
+/* TABLE */
+.twrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.btbl{width:100%;border-collapse:collapse;min-width:580px}
+.btbl th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);font-weight:600;padding:0 10px 10px;border-bottom:1px solid var(--border);white-space:nowrap}
+.btbl td{padding:11px 10px;font-size:12.5px;border-bottom:1px solid var(--surface2);vertical-align:middle}
+.btbl tr:last-child td{border-bottom:none}
+.btbl tr:hover td{background:var(--surface2)}
+.bname{font-weight:600;display:flex;align-items:center;gap:7px;white-space:nowrap}
+.bdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.rpill{font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;display:inline-block}
+.rp1{background:rgba(196,150,90,.15);color:var(--accent2)}
+.rp2{background:rgba(61,122,94,.1);color:var(--green)}
+.rp3{background:rgba(74,111,165,.1);color:var(--blue)}
+.rp4{background:rgba(160,154,149,.15);color:var(--text3)}
+
+/* LEGEND */
+.legrow{display:flex;flex-direction:column;gap:7px;margin-top:14px}
+.legitem{display:flex;justify-content:space-between;align-items:center;font-size:12px}
+.legdot{width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:6px;flex-shrink:0}
+
+/* ANIM */
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.kcard{animation:fadeUp .35s ease both}
+.kcard:nth-child(1){animation-delay:.05s} .kcard:nth-child(2){animation-delay:.1s}
+.kcard:nth-child(3){animation-delay:.15s} .kcard:nth-child(4){animation-delay:.2s}
+
+/* BOTTOM NAV */
+.bnav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--text);z-index:200;padding:8px 0;padding-bottom:max(8px,env(safe-area-inset-bottom));border-top:1px solid rgba(255,255,255,.08)}
+.bnitems{display:flex;justify-content:space-around}
+.bnitem{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 8px;color:rgba(255,255,255,.4);transition:color .2s;font-size:10px;font-weight:500}
+.bnitem.active{color:var(--accent)}
+.bnitem svg{width:20px;height:20px}
+
+/* ─── RESPONSIVE ─── */
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .overlay.open{display:block}
+  .main{margin-left:0}
+  .ham{display:flex}
+  .kgrid{grid-template-columns:repeat(2,1fr)}
+  .cgrid{grid-template-columns:1fr}
+  .cgrid3{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:600px){
+  .content{padding:14px 14px 80px}
+  .topbar{padding:12px 14px}
+  .ptitle{font-size:16px}
+  .dbadge{display:none}
+  .ptab{padding:5px 9px;font-size:11px}
+  .kgrid{grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
+  .kval{font-size:18px}
+  .cgrid,.cgrid3{grid-template-columns:1fr;gap:12px}
+  .card{padding:14px}
+  canvas{max-height:180px}
+  .bnav{display:block}
+  .sidebar{display:none!important}
+  .overlay{display:none!important}
+  .ham{display:none}
+  .tlbl{width:60px;font-size:11px}
+}
+@media(max-width:360px){
+  .kval{font-size:16px}
+  .klbl{font-size:9.5px}
+}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sb">
+  <div class="logo">
+    <div class="logo-title">Butik Lestari</div>
+    <div class="logo-sub">Retail Analytics</div>
+  </div>
+  <nav class="nav">
+    <div class="nav-lbl">Utama</div>
+    <div class="nav-item active" onclick="go('overview',this)">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" stroke-width="1.8"/><rect x="14" y="3" width="7" height="7" rx="1" stroke-width="1.8"/><rect x="3" y="14" width="7" height="7" rx="1" stroke-width="1.8"/><rect x="14" y="14" width="7" height="7" rx="1" stroke-width="1.8"/></svg>Overview
+    </div>
+    <div class="nav-item" onclick="go('sales',this)">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Sales & Revenue
+    </div>
+    <div class="nav-item" onclick="go('produk',this)">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" stroke-width="1.8"/><circle cx="7" cy="7" r="1.5" fill="currentColor"/></svg>Top Produk
+    </div>
+    <div class="nav-item" onclick="go('pelanggan',this)">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-width="1.8"/><circle cx="9" cy="7" r="4" stroke-width="1.8"/><path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke-width="1.8"/><path d="M16 3.13a4 4 0 0 1 0 7.75" stroke-width="1.8"/></svg>Pelanggan
+    </div>
+    <div class="nav-item" onclick="go('cawangan',this)">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke-width="1.8"/><polyline points="9 22 9 12 15 12 15 22" stroke-width="1.8"/></svg>Prestasi Cawangan<span class="nav-badge">4</span>
+    </div>
+  </nav>
+  <div class="sf">
+    <div style="font-size:10px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px">Cawangan</div>
+    <select class="bsel"><option>Semua Cawangan</option><option>KL Sentral</option><option>Bangsar</option><option>Subang</option><option>Puchong</option></select>
+  </div>
+</aside>
+<div class="overlay" id="ov" onclick="closeSB()"></div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-l">
+      <button class="ham" onclick="toggleSB()"><svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="12" x2="21" y2="12" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="18" x2="21" y2="18" stroke-width="2" stroke-linecap="round"/></svg></button>
+      <div class="ptitle" id="pgtitle">Overview</div>
+    </div>
+    <div class="topbar-r">
+      <div class="dbadge">📅 1 Mac 2026</div>
+      <div class="ptabs">
+        <button class="ptab active" onclick="setPeriod(this)">Hari</button>
+        <button class="ptab" onclick="setPeriod(this)">Minggu</button>
+        <button class="ptab" onclick="setPeriod(this)">Bulan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ OVERVIEW ═══ -->
+  <div class="content active" id="page-overview">
+    <div class="kgrid">
+      <div class="kcard ac"><div class="kico ac">💰</div><div class="klbl">Jualan Hari Ini</div><div class="kval">RM 12,480</div><div class="kchg up">↑ 8.4% vs semalam</div></div>
+      <div class="kcard gr"><div class="kico gr">📈</div><div class="klbl">Revenue Bulan Ini</div><div class="kval">RM 284K</div><div class="kchg up">↑ 12.1% vs bulan lepas</div></div>
+      <div class="kcard bl"><div class="kico bl">👤</div><div class="klbl">Pelanggan Baru</div><div class="kval">147 <span>orang</span></div><div class="kchg up">↑ 5.2% minggu ini</div></div>
+      <div class="kcard pu"><div class="kico pu">🛍️</div><div class="klbl">Purata Transaksi</div><div class="kval">RM 186</div><div class="kchg dn">↓ 2.1% vs minggu lepas</div></div>
+    </div>
+    <div class="stitle">Trend & Target</div>
+    <div class="cgrid">
+      <div class="card">
+        <div class="ch"><div><div class="ct">Trend Jualan Mingguan</div><div class="cs">9 minggu terakhir</div></div><span class="badge bg">+12.1%</span></div>
+        <canvas id="weeklyChart"></canvas>
+      </div>
+      <div class="card">
+        <div class="ch"><div><div class="ct">Target vs Pencapaian</div><div class="cs">Mac 2026</div></div></div>
+        <div class="trow"><div class="tlbl">KL Sentral</div><div class="pbar"><div class="pfill" style="width:82%;background:var(--accent)"></div></div><div class="tpct">82%</div></div>
+        <div class="trow"><div class="tlbl">Bangsar</div><div class="pbar"><div class="pfill" style="width:71%;background:var(--blue)"></div></div><div class="tpct">71%</div></div>
+        <div class="trow"><div class="tlbl">Subang</div><div class="pbar"><div class="pfill" style="width:93%;background:var(--green)"></div></div><div class="tpct">93%</div></div>
+        <div class="trow"><div class="tlbl">Puchong</div><div class="pbar"><div class="pfill" style="width:58%;background:var(--purple)"></div></div><div class="tpct">58%</div></div>
+        <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:12px;color:var(--text3)">Target Keseluruhan</div><div style="font-size:13px;font-weight:700;color:var(--green)">76% ✓</div></div>
+          <div class="pbar" style="margin-top:8px;height:10px"><div class="pfill" style="width:76%;background:linear-gradient(90deg,var(--green),var(--accent))"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="stitle">Ringkasan Pantas</div>
+    <div class="cgrid3">
+      <div class="card">
+        <div class="ch"><div class="ct">Top Produk Hari Ini</div><span class="badge ba">Terlaris</span></div>
+        <div class="plist">
+          <div class="pitem"><div class="prk">1</div><div style="flex:1"><div class="pname">Kebaya Moden Silk</div><div class="pcat">Baju Wanita</div></div><div style="text-align:right"><div class="psales">RM 2,340</div><div class="pqty">18 unit</div></div></div>
+          <div class="pitem"><div class="prk r2">2</div><div style="flex:1"><div class="pname">Baju Kurung Raya</div><div class="pcat">Baju Wanita</div></div><div style="text-align:right"><div class="psales">RM 1,860</div><div class="pqty">15 unit</div></div></div>
+          <div class="pitem"><div class="prk r3">3</div><div style="flex:1"><div class="pname">Kemeja Batik Premium</div><div class="pcat">Baju Lelaki</div></div><div style="text-align:right"><div class="psales">RM 1,540</div><div class="pqty">22 unit</div></div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ct">Pelanggan Semalam</div><span class="badge bb">+23 baru</span></div>
+        <div class="csgrid">
+          <div class="sbox"><div class="sbval" style="color:var(--blue)">312</div><div class="sblbl">Pengunjung</div></div>
+          <div class="sbox"><div class="sbval" style="color:var(--green)">187</div><div class="sblbl">Membeli</div></div>
+          <div class="sbox"><div class="sbval" style="color:var(--accent2)">60%</div><div class="sblbl">Konversi</div></div>
+          <div class="sbox"><div class="sbval" style="color:var(--purple)">43%</div><div class="sblbl">Repeat</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ct">Jualan Kategori</div></div>
+        <canvas id="catChart" style="max-height:160px"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SALES ═══ -->
+  <div class="content" id="page-sales">
+    <div class="kgrid">
+      <div class="kcard ac"><div class="kico ac">💰</div><div class="klbl">Revenue Bulan Ini</div><div class="kval">RM 284K</div><div class="kchg up">↑ 12.1%</div></div>
+      <div class="kcard gr"><div class="kico gr">🏆</div><div class="klbl">Best Bulan</div><div class="kval" style="font-size:17px">Jan 2026</div><div class="kchg up">RM 310,200</div></div>
+      <div class="kcard bl"><div class="kico bl">📦</div><div class="klbl">Unit Terjual</div><div class="kval">1,532 <span>unit</span></div><div class="kchg up">↑ 7.3%</div></div>
+      <div class="kcard pu"><div class="kico pu">💳</div><div class="klbl">Transaksi</div><div class="kval">1,529</div><div class="kchg up">↑ 9.8%</div></div>
+    </div>
+    <div class="stitle">Trend Jualan</div>
+    <div class="cgrid">
+      <div class="card">
+        <div class="ch"><div><div class="ct">Trend Jualan Bulanan</div><div class="cs">Jan 2025 — Mac 2026</div></div><span class="badge bg">Tren Naik</span></div>
+        <canvas id="monthlyChart" style="max-height:230px"></canvas>
+      </div>
+      <div class="card">
+        <div class="ch"><div><div class="ct">Jualan Mengikut Hari</div><div class="cs">Minggu ini</div></div></div>
+        <canvas id="dailyChart" style="max-height:230px"></canvas>
+      </div>
+    </div>
+    <div class="stitle">Target vs Pencapaian Bulanan</div>
+    <div class="card" style="margin-bottom:20px">
+      <div class="ch"><div class="ct">6 Bulan Terakhir</div><span class="badge ba">2026</span></div>
+      <canvas id="targetChart" style="max-height:220px"></canvas>
+    </div>
+  </div>
+
+  <!-- ═══ PRODUK ═══ -->
+  <div class="content" id="page-produk">
+    <div class="kgrid">
+      <div class="kcard ac"><div class="kico ac">🔥</div><div class="klbl">Terlaris</div><div class="kval" style="font-size:16px">Kebaya Silk</div><div class="kchg up">240 unit</div></div>
+      <div class="kcard gr"><div class="kico gr">📂</div><div class="klbl">Kategori #1</div><div class="kval" style="font-size:16px">Baju Wanita</div><div class="kchg up">42% jualan</div></div>
+      <div class="kcard bl"><div class="kico bl">📦</div><div class="klbl">SKU Aktif</div><div class="kval">218</div><div class="kchg up">+14 baru</div></div>
+      <div class="kcard pu"><div class="kico pu">💎</div><div class="klbl">High Value</div><div class="kval">32</div><div class="kchg up">&gt;RM 300/unit</div></div>
+    </div>
+    <div class="stitle">Produk High Sell</div>
+    <div class="cgrid">
+      <div class="card">
+        <div class="ch"><div class="ct">Top 10 Produk — Mac 2026</div><span class="badge ba">Bulan Ini</span></div>
+        <div class="plist">
+          <div class="pitem"><div class="prk">1</div><div style="flex:1"><div class="pname">Kebaya Moden Silk</div><div class="pcat">Baju Wanita</div></div><div style="text-align:right;flex-shrink:0"><div class="psales">RM 28,800</div><div class="pqty">240 unit</div></div></div>
+          <div class="pitem"><div class="prk r2">2</div><div style="flex:1"><div class="pname">Baju Kurung Raya Premium</div><div class="pcat">Baju Wanita</div></div><div style="text-align:right;flex-shrink:0"><div class="psales">RM 22,400</div><div class="pqty">196 unit</div></div></div>
+          <div class="pitem"><div class="prk r3">3</div><div style="flex:1"><div class="pname">Kemeja Batik Premium</div><div class="pcat">Baju Lelaki</div></div><div style="text-align:right;flex-shrink:0"><div class="psales">RM 18,700</div><div class="pqty">187 unit</div></div></div>
+          <div class="pitem"><div class="prk r4">4</div><div style="flex:1"><div class="pname">Jubah Muslimah</div><div class="pcat">Baju Wanita</div></div><div style="text-align:right;flex-shrink:0"><div class="psales">RM 16,500</div><div class="pqty">165 unit</div></div></div>
+          <div class="pitem"><div class="prk r4">5</div><div style="flex:1"><div class="pname">Blouse Chiffon Floral</div><div class="pcat">Baju Wanita</div></div><div style="text-align:right;flex-shrink:0"><div class="psales">RM 14,200</div><div class="pqty">158 unit</div></div></div>
+          <div class="pitem"><div class="prk r5">6</div><div style="flex:1"><div class="pname">Seluar Palazzo Wide</div><div class="pcat">Seluar</div></div><div style="text-align:right;flex-shrink:0"><div class="psales">RM 12,600</div><div class="pqty">140 unit</div></div></div>
+          <div class="pitem"><div class="prk r5">7</div><div style="flex:1"><div class="pname">Tudung Bawal Premium</div><div class="pcat">Aksesori</div></div><div style="text-align:right;flex-shrink:0"><div class="psales">RM 11,400</div><div class="pqty">228 unit</div></div></div>
+          <div class="pitem"><div class="prk r5">8</div><div style="flex:1"><div class="pname">Baju Melayu Slim Fit</div><div class="pcat">Baju Lelaki</div></div><div style="text-align:right;flex-shrink:0"><div class="psales">RM 10,800</div><div class="pqty">120 unit</div></div></div>
+          <div class="pitem"><div class="prk r5">9</div><div style="flex:1"><div class="pname">Dress Casual Cotton</div><div class="pcat">Baju Wanita</div></div><div style="text-align:right;flex-shrink:0"><div class="psales">RM 9,600</div><div class="pqty">96 unit</div></div></div>
+          <div class="pitem"><div class="prk r5">10</div><div style="flex:1"><div class="pname">Cardigan Knit Premium</div><div class="pcat">Outerwear</div></div><div style="text-align:right;flex-shrink:0"><div class="psales">RM 8,400</div><div class="pqty">84 unit</div></div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ct">Jualan Mengikut Kategori</div></div>
+        <canvas id="catChart2" style="max-height:200px"></canvas>
+        <div class="legrow">
+          <div class="legitem"><span><span class="legdot" style="background:#C4965A"></span>Baju Wanita</span><span style="font-weight:700">42%</span></div>
+          <div class="legitem"><span><span class="legdot" style="background:#4A6FA5"></span>Baju Lelaki</span><span style="font-weight:700">22%</span></div>
+          <div class="legitem"><span><span class="legdot" style="background:#3D7A5E"></span>Aksesori</span><span style="font-weight:700">18%</span></div>
+          <div class="legitem"><span><span class="legdot" style="background:#7A5A9E"></span>Outerwear</span><span style="font-weight:700">10%</span></div>
+          <div class="legitem"><span><span class="legdot" style="background:#A09A95"></span>Lain-lain</span><span style="font-weight:700">8%</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PELANGGAN ═══ -->
+  <div class="content" id="page-pelanggan">
+    <div class="kgrid">
+      <div class="kcard ac"><div class="kico ac">👤</div><div class="klbl">Jumlah Pelanggan</div><div class="kval">4,821</div><div class="kchg up">↑ 147 bulan ini</div></div>
+      <div class="kcard gr"><div class="kico gr">🔄</div><div class="klbl">Repeat Buyers</div><div class="kval">1,932</div><div class="kchg up">40% dari jumlah</div></div>
+      <div class="kcard bl"><div class="kico bl">💰</div><div class="klbl">Purata Nilai Beli</div><div class="kval">RM 186</div><div class="kchg dn">↓ 2.1%</div></div>
+      <div class="kcard pu"><div class="kico pu">🎯</div><div class="klbl">Kadar Konversi</div><div class="kval">60<span>%</span></div><div class="kchg up">↑ 3.5%</div></div>
+    </div>
+    <div class="stitle">Analitik Pelanggan</div>
+    <div class="cgrid">
+      <div class="card">
+        <div class="ch"><div><div class="ct">Pertumbuhan Pelanggan Baru — Bulanan</div><div class="cs">Sep 2025 – Mac 2026</div></div><span class="badge bg">+147 Mac</span></div>
+        <canvas id="custGrowthChart" style="max-height:230px"></canvas>
+      </div>
+      <div class="card">
+        <div class="ch"><div><div class="ct">Segmen Pelanggan</div><div class="cs">Frekuensi pembelian</div></div></div>
+        <canvas id="segChart" style="max-height:190px"></canvas>
+        <div class="legrow" style="margin-top:12px">
+          <div class="legitem"><span><span class="legdot" style="background:#C4965A"></span>Setia (5+ kali)</span><span style="font-weight:700">892 (18%)</span></div>
+          <div class="legitem"><span><span class="legdot" style="background:#3D7A5E"></span>Regular (2–4 kali)</span><span style="font-weight:700">1,040 (22%)</span></div>
+          <div class="legitem"><span><span class="legdot" style="background:#4A6FA5"></span>Baru (1 kali)</span><span style="font-weight:700">2,889 (60%)</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="stitle">Pelanggan Mengikut Cawangan</div>
+    <div class="card" style="margin-bottom:20px">
+      <div class="ch"><div class="ct">Purata Nilai Beli & Kadar Konversi</div></div>
+      <canvas id="custBranchChart" style="max-height:220px"></canvas>
+    </div>
+  </div>
+
+  <!-- ═══ CAWANGAN ═══ -->
+  <div class="content" id="page-cawangan">
+    <div class="kgrid">
+      <div class="kcard ac"><div class="kico ac">🏆</div><div class="klbl">Cawangan Terbaik</div><div class="kval" style="font-size:17px">Subang</div><div class="kchg up">93% target</div></div>
+      <div class="kcard gr"><div class="kico gr">📈</div><div class="klbl">Pertumbuhan #1</div><div class="kval" style="font-size:17px">Bangsar</div><div class="kchg up">↑ 18.3%</div></div>
+      <div class="kcard bl"><div class="kico bl">💰</div><div class="klbl">Total Revenue</div><div class="kval">RM 284K</div><div class="kchg up">4 cawangan</div></div>
+      <div class="kcard pu"><div class="kico pu">⚠️</div><div class="klbl">Perlu Perhatian</div><div class="kval" style="font-size:17px">Puchong</div><div class="kchg dn">58% target</div></div>
+    </div>
+    <div class="stitle">Perbandingan Cawangan</div>
+    <div class="cgrid">
+      <div class="card">
+        <div class="ch"><div><div class="ct">Revenue Mengikut Cawangan</div><div class="cs">Jan – Mac 2026</div></div><span class="badge ba">3 Bulan</span></div>
+        <canvas id="brRevChart" style="max-height:230px"></canvas>
+      </div>
+      <div class="card">
+        <div class="ch"><div><div class="ct">Skor Prestasi</div><div class="cs">Skor / 100</div></div></div>
+        <div style="display:flex;flex-direction:column;gap:16px;margin-top:6px">
+          <div><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#C4965A;display:inline-block"></span>KL Sentral</span><span style="font-size:12px;font-weight:700;color:var(--accent2)">82</span></div><div class="pbar" style="height:8px"><div class="pfill" style="width:82%;background:linear-gradient(90deg,var(--accent),var(--accent2))"></div></div></div>
+          <div><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#4A6FA5;display:inline-block"></span>Bangsar</span><span style="font-size:12px;font-weight:700;color:var(--blue)">75</span></div><div class="pbar" style="height:8px"><div class="pfill" style="width:75%;background:var(--blue)"></div></div></div>
+          <div><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#3D7A5E;display:inline-block"></span>Subang</span><span style="font-size:12px;font-weight:700;color:var(--green)">91</span></div><div class="pbar" style="height:8px"><div class="pfill" style="width:91%;background:var(--green)"></div></div></div>
+          <div><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#7A5A9E;display:inline-block"></span>Puchong</span><span style="font-size:12px;font-weight:700;color:var(--purple)">61</span></div><div class="pbar" style="height:8px"><div class="pfill" style="width:61%;background:var(--purple)"></div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="stitle">Jadual Prestasi Terperinci</div>
+    <div class="card" style="margin-bottom:20px">
+      <div class="twrap">
+        <table class="btbl">
+          <thead><tr><th>Cawangan</th><th>Revenue</th><th>Target</th><th>Pencapaian</th><th>Pelanggan</th><th>Purata Beli</th><th>Growth</th><th>Ranking</th></tr></thead>
+          <tbody>
+            <tr><td><div class="bname"><span class="bdot" style="background:#3D7A5E"></span>Subang</div></td><td><strong>RM 86,420</strong></td><td>RM 93,000</td><td><div class="pbar" style="width:90px"><div class="pfill" style="width:93%;background:var(--green)"></div></div><div style="font-size:11px;color:var(--green);font-weight:700;margin-top:2px">93%</div></td><td>1,342</td><td>RM 198</td><td style="color:var(--green);font-weight:700">↑ 15.2%</td><td><span class="rpill rp1">🥇 #1</span></td></tr>
+            <tr><td><div class="bname"><span class="bdot" style="background:#C4965A"></span>KL Sentral</div></td><td><strong>RM 79,600</strong></td><td>RM 97,000</td><td><div class="pbar" style="width:90px"><div class="pfill" style="width:82%;background:var(--accent)"></div></div><div style="font-size:11px;color:var(--accent2);font-weight:700;margin-top:2px">82%</div></td><td>1,156</td><td>RM 212</td><td style="color:var(--green);font-weight:700">↑ 8.7%</td><td><span class="rpill rp2">🥈 #2</span></td></tr>
+            <tr><td><div class="bname"><span class="bdot" style="background:#4A6FA5"></span>Bangsar</div></td><td><strong>RM 72,150</strong></td><td>RM 102,000</td><td><div class="pbar" style="width:90px"><div class="pfill" style="width:71%;background:var(--blue)"></div></div><div style="font-size:11px;color:var(--blue);font-weight:700;margin-top:2px">71%</div></td><td>1,088</td><td>RM 195</td><td style="color:var(--green);font-weight:700">↑ 18.3%</td><td><span class="rpill rp3">🥉 #3</span></td></tr>
+            <tr><td><div class="bname"><span class="bdot" style="background:#7A5A9E"></span>Puchong</div></td><td><strong>RM 46,580</strong></td><td>RM 80,000</td><td><div class="pbar" style="width:90px"><div class="pfill" style="width:58%;background:var(--purple)"></div></div><div style="font-size:11px;color:var(--red);font-weight:700;margin-top:2px">58%</div></td><td>684</td><td>RM 172</td><td style="color:var(--red);font-weight:700">↓ 3.1%</td><td><span class="rpill rp4">⚠️ #4</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="stitle">Trend Mingguan Semua Cawangan</div>
+    <div class="card" style="margin-bottom:20px">
+      <div class="ch"><div><div class="ct">Perbandingan 8 Minggu</div><div class="cs">Jan – Mac 2026</div></div><span class="badge bb">Mingguan</span></div>
+      <canvas id="brTrendChart" style="max-height:230px"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV (mobile) -->
+<nav class="bnav">
+  <div class="bnitems">
+    <div class="bnitem active" id="bn-overview" onclick="go('overview');bnActive('overview')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="3" y="14" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="14" width="7" height="7" rx="1" stroke-width="2"/></svg>Overview
+    </div>
+    <div class="bnitem" id="bn-sales" onclick="go('sales');bnActive('sales')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Sales
+    </div>
+    <div class="bnitem" id="bn-produk" onclick="go('produk');bnActive('produk')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" stroke-width="2"/><circle cx="7" cy="7" r="1.5" fill="currentColor"/></svg>Produk
+    </div>
+    <div class="bnitem" id="bn-pelanggan" onclick="go('pelanggan');bnActive('pelanggan')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-width="2"/><circle cx="9" cy="7" r="4" stroke-width="2"/></svg>Pelanggan
+    </div>
+    <div class="bnitem" id="bn-cawangan" onclick="go('cawangan');bnActive('cawangan')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke-width="2"/></svg>Cawangan
+    </div>
+  </div>
+</nav>
+
+<script>
+const TITLES={overview:'Overview',sales:'Sales & Revenue',produk:'Top Produk',pelanggan:'Pelanggan',cawangan:'Prestasi Cawangan'};
+
+function go(id,navEl){
+  document.querySelectorAll('.content').forEach(c=>c.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.getElementById('pgtitle').textContent=TITLES[id];
+  if(navEl){document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));navEl.classList.add('active')}
+  setTimeout(initCharts,80);
+}
+function bnActive(id){document.querySelectorAll('.bnitem').forEach(b=>b.classList.remove('active'));document.getElementById('bn-'+id).classList.add('active')}
+function toggleSB(){document.getElementById('sb').classList.toggle('open');document.getElementById('ov').classList.toggle('open')}
+function closeSB(){document.getElementById('sb').classList.remove('open');document.getElementById('ov').classList.remove('open')}
+function setPeriod(el){document.querySelectorAll('.ptab').forEach(t=>t.classList.remove('active'));el.classList.add('active')}
+
+const C={ac:'#C4965A',gr:'#3D7A5E',bl:'#4A6FA5',pu:'#7A5A9E',rd:'#C45A5A',t3:'#A09A95',grid:'rgba(0,0,0,.05)'};
+Chart.defaults.font.family="'DM Sans',sans-serif";
+Chart.defaults.font.size=11;
+Chart.defaults.color=C.t3;
+Chart.defaults.plugins.legend.display=false;
+
+const CH={};
+const mob=()=>window.innerWidth<=600;
+function ax(){return{grid:{color:C.grid,drawBorder:false},ticks:{color:C.t3}}}
+
+function mk(id,cfg){
+  const el=document.getElementById(id);
+  if(!el||CH[id])return;
+  CH[id]=new Chart(el,cfg);
+}
+
+function initCharts(){
+  const m=mob();
+
+  mk('weeklyChart',{type:'line',data:{labels:['W1 Jan','W2','W3','W4','W1 Feb','W2','W3','W4','W1 Mac'],datasets:[{data:[52,58,55,62,68,71,74,78,84].map(v=>v*1000),borderColor:C.ac,backgroundColor:'rgba(196,150,90,.08)',fill:true,tension:.4,pointRadius:m?3:4,pointBackgroundColor:C.ac,pointBorderColor:'#fff',pointBorderWidth:2}]},options:{responsive:true,scales:{x:ax(),y:{...ax(),ticks:{callback:v=>'RM'+v/1000+'k',color:C.t3}}}}});
+
+  mk('catChart',{type:'doughnut',data:{labels:['Baju Wanita','Baju Lelaki','Aksesori','Outerwear','Lain'],datasets:[{data:[42,22,18,10,8],backgroundColor:[C.ac,C.bl,C.gr,C.pu,'#A09A95'],borderWidth:0,hoverOffset:5}]},options:{responsive:true,cutout:'65%',plugins:{legend:{display:true,position:'bottom',labels:{padding:8,font:{size:10},boxWidth:9,usePointStyle:true}}}}});
+
+  mk('monthlyChart',{type:'bar',data:{labels:['J25','F','M','A','M','J','J','A','S','O','N','D','J26','F','Mac'],datasets:[{data:[210,195,225,240,228,252,268,245,258,272,285,310,302,268,285].map(v=>v*1000),backgroundColor:(_,i)=>i===14?C.ac:'rgba(196,150,90,.18)',borderRadius:4},{type:'line',data:[210,195,225,240,228,252,268,245,258,272,285,310,302,268,285].map(v=>v*1000),borderColor:C.gr,backgroundColor:'transparent',tension:.4,pointRadius:2,borderWidth:2}]},options:{responsive:true,scales:{x:ax(),y:{...ax(),ticks:{callback:v=>'RM'+v/1000+'k',color:C.t3}}}}});
+
+  mk('dailyChart',{type:'bar',data:{labels:['Isnin','Selasa','Rabu','Khamis','Jumaat','Sabtu','Ahad'],datasets:[{data:[8400,9200,7800,10200,11500,14800,13200],backgroundColor:[C.bl,C.bl,C.bl,C.bl,C.ac,C.gr,C.gr],borderRadius:6}]},options:{responsive:true,scales:{x:ax(),y:{...ax(),ticks:{callback:v=>'RM'+v/1000+'k',color:C.t3}}}}});
+
+  mk('targetChart',{type:'bar',data:{labels:['Jan','Feb','Mac','Apr','Mei','Jun'],datasets:[{label:'Target',data:[300,310,372,380,390,400].map(v=>v*1000),backgroundColor:'rgba(160,154,149,.2)',borderRadius:5},{label:'Pencapaian',data:[302,268,285,0,0,0].map(v=>v*1000),backgroundColor:C.ac,borderRadius:5}]},options:{responsive:true,plugins:{legend:{display:true,labels:{usePointStyle:true,boxWidth:8}}},scales:{x:ax(),y:{...ax(),ticks:{callback:v=>'RM'+v/1000+'k',color:C.t3}}}}});
+
+  mk('catChart2',{type:'doughnut',data:{labels:['Baju Wanita','Baju Lelaki','Aksesori','Outerwear','Lain'],datasets:[{data:[42,22,18,10,8],backgroundColor:[C.ac,C.bl,C.gr,C.pu,'#A09A95'],borderWidth:0,hoverOffset:5}]},options:{responsive:true,cutout:'65%'}});
+
+  mk('custGrowthChart',{type:'line',data:{labels:['Sep25','Okt','Nov','Dis','Jan26','Feb','Mac'],datasets:[{label:'Pelanggan Baru',data:[98,112,135,158,142,128,147],borderColor:C.ac,backgroundColor:'rgba(196,150,90,.1)',fill:true,tension:.4,pointRadius:m?3:5,pointBackgroundColor:C.ac,pointBorderColor:'#fff',pointBorderWidth:2},{label:'Repeat Buyers',data:[42,58,68,82,74,65,71],borderColor:C.gr,backgroundColor:'transparent',tension:.4,pointRadius:m?3:4,pointBackgroundColor:C.gr,borderDash:[4,3]}]},options:{responsive:true,plugins:{legend:{display:true,labels:{usePointStyle:true,boxWidth:8}}},scales:{x:ax(),y:ax()}}});
+
+  mk('segChart',{type:'doughnut',data:{labels:['Setia','Regular','Baru'],datasets:[{data:[18,22,60],backgroundColor:[C.ac,C.gr,C.bl],borderWidth:0,hoverOffset:5}]},options:{responsive:true,cutout:'60%'}});
+
+  mk('custBranchChart',{type:'bar',data:{labels:['KL Sentral','Bangsar','Subang','Puchong'],datasets:[{label:'Purata Nilai Beli (RM)',data:[212,195,198,172],backgroundColor:[C.ac,C.bl,C.gr,C.pu],borderRadius:6},{type:'line',label:'Konversi (%)',data:[62,58,65,48],borderColor:C.rd,yAxisID:'y2',tension:.3,pointRadius:6,pointBackgroundColor:C.rd,borderWidth:2}]},options:{responsive:true,plugins:{legend:{display:true,labels:{usePointStyle:true,boxWidth:8}}},scales:{x:ax(),y:{...ax(),ticks:{callback:v=>'RM'+v,color:C.t3}},y2:{position:'right',ticks:{callback:v=>v+'%',color:C.rd},grid:{display:false}}}}});
+
+  mk('brRevChart',{type:'bar',data:{labels:['Jan','Feb','Mac'],datasets:[{label:'KL Sentral',data:[85000,72000,79600],backgroundColor:C.ac,borderRadius:4},{label:'Bangsar',data:[60000,65000,72150],backgroundColor:C.bl,borderRadius:4},{label:'Subang',data:[74000,80000,86420],backgroundColor:C.gr,borderRadius:4},{label:'Puchong',data:[52000,51000,46580],backgroundColor:C.pu,borderRadius:4}]},options:{responsive:true,plugins:{legend:{display:true,labels:{usePointStyle:true,boxWidth:8}}},scales:{x:ax(),y:{...ax(),ticks:{callback:v=>'RM'+v/1000+'k',color:C.t3}}}}});
+
+  mk('brTrendChart',{type:'line',data:{labels:['W1 Jan','W2','W3','W4','W1 Feb','W2','W3','W4'],datasets:[{label:'KL Sentral',data:[18000,19500,17800,20200,16000,17500,18200,19900],borderColor:C.ac,tension:.4,pointRadius:m?2:3,borderWidth:2},{label:'Bangsar',data:[14000,15200,14800,15600,14500,15800,16200,17600],borderColor:C.bl,tension:.4,pointRadius:m?2:3,borderWidth:2},{label:'Subang',data:[16000,17800,18400,19200,18800,20000,21200,22400],borderColor:C.gr,tension:.4,pointRadius:m?2:3,borderWidth:2},{label:'Puchong',data:[12000,12800,11900,13100,11500,12200,11800,12580],borderColor:C.pu,tension:.4,pointRadius:m?2:3,borderWidth:2}]},options:{responsive:true,plugins:{legend:{display:true,labels:{usePointStyle:true,boxWidth:8}}},scales:{x:ax(),y:{...ax(),ticks:{callback:v=>'RM'+v/1000+'k',color:C.t3}}}}});
+}
+
+initCharts();
+</script>
+</body>
+</html>
